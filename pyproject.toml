@@ -7,11 +7,24 @@ authors = [
     { name = "rusevich", email = "nonamemailnum1@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "gymnasium>=1.4.0",
+    "numpy>=2.5.4",
+    "pygame>=2.6.1",
+    "torch>=2.14.1",
+]
 
 [project.scripts]
-rl-snakes = "rl_snakes:main"
+snake-play = "rl_snakes.play:main"
 
 [build-system]
 requires = ["uv_build>=0.12.0,<0.13.0"]
 build-backend = "uv_build"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
