@@ -14,7 +14,7 @@ class SnakeEnv(gym.Env):
     """Snake on a `width x height` grid.
 
     Actions (relative to the current heading): 0 = straight, 1 = turn right, 2 = turn left.
-    Rewards: +1 for eating an apple, -1 for dying, 0 otherwise.
+    Rewards: +1 for eating an apple, -1 for dying, -`step_penalty` otherwise.
 
     Observations (`obs_type`):
       - "features": 11 binary values —
@@ -25,6 +25,9 @@ class SnakeEnv(gym.Env):
 
     The episode is truncated if the snake goes `max_idle_steps` steps without eating
     (default: width * height), so a looping policy can't run forever.
+
+    `info["cause"]` says why the episode ended: "wall", "self", "timeout" or "won"
+    (None while it is still running).
     """
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 10}
@@ -34,6 +37,7 @@ class SnakeEnv(gym.Env):
         size: int | tuple[int, int] = 10,
         obs_type: str = "features",
         max_idle_steps: int | None = None,
+        step_penalty: float = 0.005,
         render_mode: str | None = None,
     ):
         self.width, self.height = (size, size) if isinstance(size, int) else size
@@ -43,6 +47,7 @@ class SnakeEnv(gym.Env):
 
         self.obs_type = obs_type
         self.max_idle_steps = max_idle_steps or self.width * self.height
+        self.step_penalty = float(step_penalty)
         self.render_mode = render_mode
         self._renderer = None
 
@@ -59,6 +64,7 @@ class SnakeEnv(gym.Env):
         self.snake = deque([(cx, cy), (cx - 1, cy), (cx - 2, cy)])  # head first
         self.score = 0
         self.idle_steps = 0
+        self.cause = None
         self._place_apple()
         if self.render_mode == "human":
             self.render()
@@ -75,17 +81,22 @@ class SnakeEnv(gym.Env):
             if not eats:
                 self.snake.append(tail)  # keep the final frame intact for rendering
             reward, terminated = -1.0, True
+            self.cause = "self" if head in self.snake else "wall"
         else:
             self.snake.appendleft(head)
-            reward, terminated = 0.0, False
+            reward, terminated = -self.step_penalty, False
             self.idle_steps += 1
             if eats:
                 reward = 1.0
                 self.score += 1
                 self.idle_steps = 0
                 terminated = not self._place_apple()  # board is full: the snake won
+                if terminated:
+                    self.cause = "won"
 
         truncated = not terminated and self.idle_steps >= self.max_idle_steps
+        if truncated:
+            self.cause = "timeout"
         if self.render_mode == "human":
             self.render()
         return self._obs(), reward, terminated, truncated, self._info()
@@ -153,4 +164,4 @@ class SnakeEnv(gym.Env):
         return grid
 
     def _info(self) -> dict:
-        return {"score": self.score, "length": len(self.snake)}
+        return {"score": self.score, "length": len(self.snake), "cause": self.cause}

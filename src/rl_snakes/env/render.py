@@ -32,7 +32,9 @@ class SnakeRenderer:
         if mode == "human":
             pygame.display.init()
             pygame.display.set_caption("Snake")
-            self.surface = pygame.display.set_mode(size)
+            # reuse the open window: calling set_mode again nudges it on some WMs
+            surface = pygame.display.get_surface()
+            self.surface = surface if surface is not None and surface.get_size() == size else pygame.display.set_mode(size)
             self.clock = pygame.time.Clock()
         else:
             self.surface = pygame.Surface(size)
@@ -53,6 +55,10 @@ class SnakeRenderer:
             pygame.display.flip()
             self.clock.tick(self.fps)
             return None
+        return self.frame()
+
+    def frame(self) -> np.ndarray:
+        """The last drawn frame as an (H, W, 3) uint8 array, in either mode."""
         return np.transpose(pygame.surfarray.array3d(self.surface), (1, 0, 2))
 
     def close(self):

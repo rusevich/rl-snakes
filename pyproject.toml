@@ -9,13 +9,18 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "gymnasium>=1.4.0",
+    "matplotlib>=3.11.2",
     "numpy>=2.5.4",
+    "pillow>=13.0.0",
     "pygame>=2.6.1",
     "torch>=2.14.1",
 ]
 
 [project.scripts]
 snake-play = "rl_snakes.play:main"
+snake-plot = "rl_snakes.plot:main"
+snake-train = "rl_snakes.main:main"
+snake-watch = "rl_snakes.watch:main"
 
 [build-system]
 requires = ["uv_build>=0.12.0,<0.13.0"]
